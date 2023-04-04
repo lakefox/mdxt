@@ -14,6 +14,7 @@ symbol[id]{state/condition}
 | ? | Display if |
 | > | Execute |
 | # | Component |
+| % | Loop |
 | ```> | Execute code |
 
 ## Variable input/output
@@ -126,7 +127,7 @@ This acts the same as the variable, outputting to the document if not used in an
 
 ## Display If
 
-To use a display if condition, first define the condition statement with a question mark and a set of curly brackets with the condition inside it. The display if will only render the content inside if the condition is true. Display if statements cannot contain and execute statement as the content are executed the same way. The content intended to be displayed goes underneath the initiator indented with a single tab character.
+To use a display if condition, first define the condition statement with a question mark and a set of curly brackets with the condition inside it. The display if will only render the content inside if the condition is true. Display if statements cannot contain an execute statement as the content is executed the same way. The content intended to be displayed goes underneath the initiator indented with a single tab character.
 
 ```text
 ?{condition}
@@ -201,3 +202,12 @@ console.log(x);
 - These are not copy and pastable, but only for example.
 
 All code executed on the server side is done in the Node.JS vm module. This is not secure, however, it does provide a fairly safe space to run trusted code without exposing your server to most attacks. You should not allow just anyone to render documents on the server as running any untrusted code on a server is always dangerous. However, because the document is rendered server-side no one on the client side is able to run the code inside.
+
+## Loops
+
+The loop operator is defined by the `%` symbol and allows for generating variable length content. The syntax is as below, in the first group define the varibles you want to use inside of the loop. The first one is the current index of the loop and the second is the total amount of times to be looped over. The next group is the amount of times to loop over, this can be a integer or a input that returns a integer. The content intended to be repeated goes underneath tabbed over, this will repeat in the final document.
+
+```text
+%[index, length]{amount}
+    @{index} of @{length}
+```

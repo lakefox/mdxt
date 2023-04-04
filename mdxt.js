@@ -1,7 +1,7 @@
 import { marked } from "marked";
 import { highlight } from "./hlCode";
 
-export function render(md) {
+export function render(md, state=false) {
     let glob = {};
     // find the initiators
     let inputInit = breaker(md, "@[", "]{", "}");
@@ -9,6 +9,7 @@ export function render(md) {
     let exeWIdInit = breaker(md, ">[","]{", "}");
     let ifInit = breaker(md, "?{", "}");
     let elInit = breaker(md, "#{", "}");
+    let forInit = breaker(md, "%[", "]{", "}");
 
     let textSplit = md.split("");
 
@@ -45,35 +46,34 @@ export function render(md) {
             params = label.slice(1,label.indexOf(")"));
             label = label.slice(label.indexOf(")")+1);
         }
-        let interal;
+        let internal;
         let tabs = "";
         if (type == "select") {
             let parsed = parseTabs(inputInit[i].index + inputInit[i][0].length+1, textSplit);
-            tabs = parsed.lines
-            interal = `<select title="${inputInit[i][2]}" ${params} name="${name}" data-mdxt-parent="${name}" value="${inputInit[i][2]}" ${isGroup ? "data-mdxt-index='" + (glob[name].group.length - 1) + "'" : ""}>
-                ${tabs.map(e => 
-                    `<option value="${e.trim().split("](")[1].slice(0, -1)}"  ${inputInit[i][2] == e.trim().split("](")[1].slice(0, -1) ? "selected":""}>${e.trim().split("](")[0].slice(1)}</option>`
-                    ).join("")
-                }
-            </select>`;
+            tabs = parsed.lines;
+            internal = `<select title="${inputInit[i][2]}" ${params} name="${name}" data-mdxt-parent="${name}" value="${inputInit[i][2]}" ${isGroup ? "data-mdxt-index='" + (glob[name].group.length - 1) + "'" : ""}>${tabs.map(e => `<option value="${e.trim().split("](")[1].slice(0, -1)}"  ${inputInit[i][2] == e.trim().split("](")[1].slice(0, -1) ? "selected":""}>${e.trim().split("](")[0].slice(1)}</option>`).join("")}</select>`;
             tabs = new Array(parsed.end).fill(0).join("");
         } else if (type == "textarea") {
-            interal = `<textarea title="${inputInit[i][2]}" ${params} name="${name}" data-mdxt-parent="${name}" ${isGroup ? "data-mdxt-index='" + (glob[name].group.length - 1) + "'" : ""}>${inputInit[i][2]}</textarea>`;
+            internal = `<textarea title="${inputInit[i][2]}" ${params} name="${name}" data-mdxt-parent="${name}" ${isGroup ? "data-mdxt-index='" + (glob[name].group.length - 1) + "'" : ""}>${inputInit[i][2]}</textarea>`;
         } else {
-            interal = `<input type="${type}" ${params} title="${inputInit[i][2]}" name="${name}" data-mdxt-parent="${name}" value="${inputInit[i][2]}" ${isGroup ? "data-mdxt-index='" + (glob[name].group.length - 1) + "'" : ""} ${(type == "checkbox" || type == "radio") && inputInit[i][2] == "true" ? "checked" : ""}>`;
+            internal = `<input type="${type}" ${params} title="${inputInit[i][2]}" name="${name}" data-mdxt-parent="${name}" value="${inputInit[i][2]}" ${isGroup ? "data-mdxt-index='" + (glob[name].group.length - 1) + "'" : ""} ${(type == "checkbox" || type == "radio") && inputInit[i][2] == "true" ? "checked" : ""}>`;
         }
         if (params != "") {
             params = params + "  ";   
         }
         if (label.length > 0) {
-            textSplit = inject(textSplit, inputInit[i][0] + label + tabs + params, `<label for="${name}">${interal}${label}</label>`, inputInit[i].index);
+            if (type == "radio" || type == "checkbox") {
+                textSplit = inject(textSplit, inputInit[i][0] + label + tabs + params, `<label for="${name}">${internal}${label}</label>`, inputInit[i].index);
+            } else {
+                textSplit = inject(textSplit, inputInit[i][0] + label + tabs + params, `<label for="${name}">${label}${internal}</label>`, inputInit[i].index);
+            }
         } else {
-            textSplit = inject(textSplit, inputInit[i][0] + tabs + params, interal, inputInit[i].index);
+            textSplit = inject(textSplit, inputInit[i][0] + tabs + params, internal, inputInit[i].index);
         }
     }
     
     for (let i = 0; i < elInit.length; i++) {
-        let interal = "";
+        let internal = "";
         let type = elInit[i][1];
 
         let tabs = "";
@@ -83,11 +83,11 @@ export function render(md) {
             parsed = parseTabs(start, textSplit);
             tabs = parsed.lines;
             let tabGroups = [...chunks(tabs, 2)];
+            if (tabGroups.length % 2 == 1) {
+                tabGroups.pop();
+            }
             for (let a = 0; a < tabGroups.length; a++) {
-                interal += `<details data-mdxt-type="accordion" ${a==0?"open":""}>
-                    <summary>${tabGroups[a][0].trim().slice(1,-1)}</summary>
-                    <p>${tabGroups[a][1]}</p>
-                </details>`
+                internal += `<details data-mdxt-type="accordion" ${a==0?"open":""}><summary>${tabGroups[a][0].trim().slice(1,-1)}</summary><p>${tabGroups[a][1]}</p></details>`
             }
         } else if (type == "column") {
             parsed = parseTabs(start, textSplit);
@@ -103,9 +103,19 @@ export function render(md) {
                 }
             }
             all += `<div style="flex-basis: 100%">${current}</div>`;
-            interal = `<div data-mdxt-type="column" style="display: flex;">${all}</div>`
+            internal = `<div data-mdxt-type="column" style="display: flex;">${all}</div>`
+        } else if (type == "video") {
+            parsed = parseTabs(start, textSplit);
+            tabs = parsed.lines;
+            internal = "<video controls>";
+            for (let i = 0; i < tabs.length; i++) {
+                let attrs = tabs[i].trim().slice(1,-1).split("](");
+                internal += `<source src="${attrs[0]}" type="${attrs[1]}">`
+                
+            }
+            internal += "</video>";
         }
-        textSplit = inject(textSplit, new Array((start - elInit[i].index) + parsed.end).fill(0).join(""), interal, elInit[i].index);
+        textSplit = inject(textSplit, new Array((start - elInit[i].index) + parsed.end).fill(0).join(""), internal, elInit[i].index);
     }
 
     for (let i = 0; i < exeWIdInit.length; i++) {
@@ -119,7 +129,7 @@ export function render(md) {
         textSplit = inject(textSplit, exeWIdInit[i][0], `<span data-mdxt-parent="${name}" style="display: none;" data-mdxt-exe="${encodeURIComponent(exeWIdInit[i][2])}">${exe(exeWIdInit[i][2], glob)}</span>`, exeWIdInit[i].index);
     }
 
-    for (let i = 0; i < ifInit.length; i++) {
+    for (let i = ifInit.length-1; i >= 0; i--) {
         let start = ifInit[i].index + ifInit[i][0].length + 1;
         let parsed = parseTabs(start, textSplit);
         let tabs = parsed.lines.join("");
@@ -132,6 +142,27 @@ export function render(md) {
         textSplit = inject(textSplit, exeInit[i][0],
             `<span data-mdxt-exe="${encodeURIComponent(exeInit[i][1])}">${exe(exeInit[i][1], glob)}</span>`, exeInit[i].index
         );
+    }
+
+    for (let i = 0; i < forInit.length; i++) {
+        let start = forInit[i].index + forInit[i][0].length + 1;
+        let parsed = parseTabs(start, textSplit);
+        let tabs = parsed.lines.join("");
+        let vars = forInit[i][1].split(",");
+        let loopAmount = exe(forInit[i][2], glob);
+        let internal = "";
+        for (let b = 0; b < loopAmount; b++) {
+            let tabCopy = tabs;
+            let indexVar = new RegExp(`@{${vars[0].trim()}}`, "g");
+            tabCopy = tabCopy.replace(indexVar, b);
+            if (vars.length == 2) {
+                let lenVar = new RegExp(`@{${vars[1].trim()}}`);
+                tabCopy = tabCopy.replace(lenVar, loopAmount);
+            }
+            internal += `<div>${tabCopy}</div>`;
+
+        }
+        textSplit = inject(textSplit, new Array((start - forInit[i].index) + parsed.end).fill(0).join(""), `<div data-mdxt-exe="${encodeURIComponent(forInit[i][2])}" data-mdxt-for="${encodeURIComponent(tabs)}" data-mdxt-inject="${encodeURIComponent(forInit[i][1])}">${internal}</div>`, forInit[i].index);
     }
 
     let doc = fillVars(textSplit.join(""), glob);
@@ -221,7 +252,7 @@ function type(val) {
         return val == "true";
     } else {
         if (isNaN(val)) {
-            return val;
+            return `"${val}"`;
         } else {
             return parseFloat(val);
         }
@@ -229,7 +260,7 @@ function type(val) {
 }
 
 function fillVars(doc, glob) {
-    doc = doc.replaceAll(/\@\{(.*?)\}[^\[\d+\]]/g, (raw, name) => {
+    doc = doc.replaceAll(/\@\{(.*?)\}(?=[^\[])/g, (raw, name) => {
         if (glob[name].value) {
             return `<span data-mdxt-value="${name}">${glob[name].value}</span>` || "";
         } else {
@@ -285,6 +316,18 @@ function hydrater(keys) {
                     try {
                         if (exe.dataset.mdxtIf) {
                             exe.style.display = eval(cmd) ? "inline": "none";
+                        } else if (exe.dataset.mdxtFor) {
+                            let internal = "";
+                            let v = decodeURIComponent(exe.dataset.mdxtInject).split(",");
+                            for (let i = 0; i < cmd; i++) {
+                                let cp = decodeURIComponent(exe.dataset.mdxtFor);
+                                cp = cp.replace(new RegExp("@{"+v[0].trim()+"}", "g"), i);
+                                if (v.length == 2) {
+                                    cp = cp.replace(new RegExp("@{"+v[1].trim()+"}", "g"), cmd);
+                                }
+                                internal += "<div>"+cp+"</div>";
+                            }
+                            exe.innerHTML = internal;
                         } else {
                             exe.innerHTML = eval(cmd)
                         }

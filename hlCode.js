@@ -13,10 +13,10 @@ export function highlight(contents) {
         if (i % 2 == 1) {
             let code = prep(part, tags);
             if (code.execute) {
-                parts[i] = `<pre><code>${code.html}</code>
+                parts[i] = `<pre rel="${code.lang}"><code>${code.html}</code>
                     <div class="mdxt_code_result">${runCode(code.code)}</div></pre>`;
             } else {
-                parts[i] = `<pre><code>${code.html}</code></pre>`;
+                parts[i] = `<pre rel="${code.lang}"><code>${code.html}</code></pre>`;
             }
         }
     }
@@ -48,11 +48,11 @@ function runCode(code) {
     code = code.replace(/console.log/g, "output");
     try {
         vm.runInContext(code, context, {timeout: 1000});
-        let op = "<span>> " + context.store.map(e => e.map(a => JSON.stringify(a)).join(" ")).join("</span><span>\n> ");
+        let op = "<span>> " + context.store.map(e => e.map(a => JSON.stringify(a)).join(" ")).join("\n</span><span>> ");
         return op;
     } catch (e) {
-        context.store.push([e.toString()]);
-        let op = "<span>> " + context.store.map(e => e.map(a => JSON.stringify(a)).join(" ")).join("</span><span>\n> ");
+        let op = "<span>> " + context.store.map(e => e.map(a => JSON.stringify(a)).join(" ")).join("\n</span><span>> ");
+        op += `\n</span><span class="mdxt_error">> ${e.toString()}</span>`
         return op;
     }
 }
@@ -61,7 +61,7 @@ function prep(raw, tags) {
     let part = raw.trim();
     let lang = part.slice(0, part.indexOf("\n")).toLowerCase();
     let execute = false;
-    if (lang[0] == ">" && ["javascript","js"].indexOf(lang) != -1) {
+    if (lang[0] == ">" && ["javascript","js"].indexOf(lang.slice(1)) != -1) {
         lang = lang.slice(1);
         execute = true;
     }
@@ -79,7 +79,8 @@ function prep(raw, tags) {
         return tags[placeholder];
     }),
     execute,
-    code
+    code,
+    lang
     };
 }
 
