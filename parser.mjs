@@ -150,112 +150,117 @@ function map(string, pattern) {
     let index = string.indexOf(broke[0].text) + broke[0].text.length;
     let store = {};
     let name = "";
-    let aLock = 0;
-    let aLocked = false;
+    let repeatable = false;
+    let secondPass = false;
     for (let a = 1; a < broke.length; a++) {
         console.log("start");
-        console.log(broke[a], name, aLocked, a, index);
-        console.log(
-            broke[a].text != "",
-            (store[name] == undefined || typeof store[name] == "object") &&
-                name != ""
-        );
+        console.log(broke[a], index);
+        console.log("#-----------------");
+        console.log(string.slice(index));
+        console.log("!-----------------");
         if (broke[a].text) {
-            if (
-                (store[name] == undefined || typeof store[name] == "object") &&
-                name != ""
-            ) {
-                console.log("Slice");
-                let found = false;
-                let seperate = 0;
-                if (broke[a].repeatable && !aLocked) {
-                    console.log("Lock!");
-                    for (let b = a; b >= 0; b--) {
-                        if (!broke[b].repeatable) {
-                            aLock = b;
+            //combine all repeatables after the varible declearation into a single string and look for it then add the length and skip to the a value at/or if at skip to start until not found
+            let slug = "";
+            let end = a;
+            for (let b = a; b < broke.length; b++) {
+                if (
+                    broke[b].text &&
+                    broke[a].optional == broke[b].optional &&
+                    broke[a].repeatable == broke[b].repeatable
+                ) {
+                    slug += broke[b].text;
+                } else {
+                    end = b;
+                    break;
+                }
+            }
+            if (broke[a].optional) {
+                console.log("optional");
+                let pos = string.indexOf(broke[a].text, index);
+                let skip = false;
+                if (pos != -1) {
+                    for (let b = a + 1; b < broke.length; b++) {
+                        if (broke[b].text && !broke[b].optional) {
+                            if (string.indexOf(broke[b].text, index) < pos) {
+                                skip = true;
+                            }
                             break;
                         }
                     }
-                    aLocked = true;
-                }
-                let offset = string.indexOf(broke[a].text, index);
-                console.log(offset);
-                if (offset != -1) {
-                    seperate = broke[a].text.length;
-                    found = true;
                 } else {
-                    for (let b = a; b < broke.length; b++) {
-                        if (broke[b].text) {
-                            let pos = string.indexOf(broke[b].text, index);
-                            if (pos != -1) {
-                                offset = pos;
-                                seperate = broke[b].text.length;
-                                a = b;
-                                found = true;
-                                break;
-                            }
-                        }
+                    skip = true;
+                }
+
+                if (skip) {
+                    console.log("skipping");
+                    continue;
+                }
+            }
+            console.log(slug.split(""));
+
+            let slugPos = string.indexOf(slug, index);
+            console.log("Slug Position: ", slugPos);
+
+            if (slugPos == -1 && broke[a].repeatable) {
+                console.log("Stopping Loop");
+                for (let b = a; b < broke.length; b++) {
+                    if (broke[b].text && !broke[b].repeatable) {
+                        a = b;
+                        break;
                     }
                 }
-                if (found) {
-                    console.log("found", name);
-                    if (broke[a].repeatable || store[name] != undefined) {
-                        console.log("Storing", a, string.slice(index, offset));
-                        if (store[name] == undefined) {
-                            store[name] = [];
-                        }
-                        store[name].push(string.slice(index, offset));
-                        if (broke[a + 1]) {
-                            if (!broke[a + 1].repeatable) {
-                                console.log(a, aLock);
-                                a = aLock;
-                                aLocked = true;
-                            }
-                        } else {
-                            console.log(a, aLock);
-                            a = aLock;
-                            aLocked = true;
-                        }
-                    } else if (store[name] == undefined) {
-                        console.log("Store 2");
-                        store[name] = string.slice(index, offset);
+                continue;
+            }
+
+            if (name) {
+                console.log("OP", name, end);
+                let contents = string.slice(index, slugPos);
+                console.log(repeatable);
+                if (repeatable || typeof store[name] == "object") {
+                    if (!store[name]) {
+                        store[name] = [];
                     }
-                    name = "";
-                    index = offset + seperate;
+                    store[name].push(contents);
+                } else {
+                    store[name] = contents;
                 }
+                secondPass = false;
+                console.table(store);
+                name = "";
             } else {
-                console.log(
-                    "Here",
-                    index,
-                    string.indexOf(broke[a].text, index),
-                    string.slice(index)
-                );
-                if (index == string.indexOf(broke[a].text, index)) {
-                    index += broke[a].text.length;
+                console.log("Jump", end - 1);
+                a = end - 1;
+            }
+
+            if (slugPos != -1) {
+                index = slugPos + slug.length;
+            }
+            console.log(broke[end], broke[a]);
+            if (broke[a].repeatable && !secondPass && slugPos != -1) {
+                let reset = false;
+                if (broke[end + 1]) {
+                    if (!broke[end + 1].repeatable) {
+                        reset = true;
+                    }
                 } else {
-                    console.log("Skip");
-                    a += 2;
+                    reset = true;
+                }
+                console.log("reset", reset);
+                if (reset) {
+                    for (let b = a; b > 0; b--) {
+                        if (!broke[b].repeatable) {
+                            a = b;
+                            break;
+                        }
+                    }
+                    secondPass = true;
                 }
             }
         } else {
-            console.log("Making Name");
             if (broke[a].name) {
                 name = broke[a].name;
+                repeatable = broke[a].repeatable;
             }
-            console.log(name);
-        }
-    }
-    name = broke.at(-1).name;
-    if (name) {
-        if (store[name] == undefined) {
-            if (string.slice(index) != "") {
-                store[name] = string.slice(index);
-            }
-        } else if (typeof store[name] == "object" || store[name].repeatable) {
-            if (store[name] == undefined) {
-                store[name] = [];
-            }
-            store[name].push(string.slice(index));
         }
     }
     return store;
@@ -400,10 +405,14 @@ let f = map(
 \tconetn1
 \ttest
 \t===
+\thi
 \tmore
 \t===
 \ttext
+word hello
 `,
     /\#\{[column]\}\n*{\t{content}\n\t[===]\n}\t{content}\n/
 );
 console.log(f);
+
+// pattern have \t+>(tabs){content}\n(tabs)>[=+]
