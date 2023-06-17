@@ -53,9 +53,21 @@ export function render(md) {
 }
 
 console.log(
-    parser.extract(`test
+    parser.extract(`dfs@[id]{0} test
+tejsahjkdhjksdfhkajsldhfjkshdjk
 @[id:select]{0}
-\t[Label](0)
+\t[L1](0)
 \t[L2](1)
-more`)
+\t[L3](2)
+dshfjksdahfkjhdsjakhfjkasdhfkjshalkjfhjkas
+jkfgdsfjkhlgjhkldfshjkgjhkdsjhkgjhkdsjkfgjkhdsfjhkgkjldsfhgljkdsf
+#{column}
+\tconetn1
+\ttest
+\t===
+\thi@{id}
+\tmore
+\t===
+\ttext
+word hellodfgdsfgdfsgdsfgdsfgdsfgsdfgdsfg`)
 );

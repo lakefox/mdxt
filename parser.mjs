@@ -13,21 +13,22 @@ export function FastExtract() {
         for (const key in definitions) {
             if (Object.hasOwnProperty.call(definitions, key)) {
                 const pattern = definitions[key];
-                extracted[key] = [...find(text, pattern)].slice(0, -1);
+                extracted[key] = [...find(text, pattern)].reverse();
             }
         }
+        console.log(extracted);
         for (const key in definitions) {
             if (Object.hasOwnProperty.call(definitions, key)) {
                 const pattern = definitions[key];
                 if (handlers[key]) {
-                    let found = [...find(text, pattern)].slice(0, -1);
-                    found.sort((a, b) => b.index - a.index);
+                    let found = [...find(text, pattern)].reverse();
+                    found.sort((a, b) => b.start - a.start);
                     for (let i = 0; i < found.length; i++) {
                         let replaceValue = handlers[key](found[i], extracted);
                         text =
-                            text.slice(0, found[i].index) +
+                            text.slice(0, found[i].start) +
                             replaceValue +
-                            text.slice(found[i].index + found[i].length);
+                            text.slice(found[i].end);
                     }
                 }
             }
@@ -56,6 +57,8 @@ function* find(string, pattern) {
 
         if (output.start != -1) {
             index = start;
+            output.start += start;
+            output.end += start;
             yield output;
         } else {
             done = true;
@@ -320,22 +323,22 @@ function escapeBuffer(b) {
 //     ),
 // ];
 
-let f = [
-    ...find(
-        `jkfgdsfjkhlgjhkldfshjkgjhkdsjhkgjhkdsjkfgjkhdsfjhkgkjldsfhgljkdsf
-#{column}
-\tconetn1
-\ttest
-\t===
-\thi
-\tmore
-\t===
-\ttext
-word hellodfgdsfgdfsgdsfgdsfgdsfgsdfgdsfg
-`,
-        /\#\{[column]\}\n*{\t{content}\n\t[===]\n}\t{content}\n/
-    ),
-];
-console.log(f);
+// let f = [
+//     ...find(
+//         `jkfgdsfjkhlgjhkldfshjkgjhkdsjhkgjhkdsjkfgjkhdsfjhkgkjldsfhgljkdsf
+// #{column}
+// \tconetn1
+// \ttest
+// \t===
+// \thi
+// \tmore
+// \t===
+// \ttext
+// word hellodfgdsfgdfsgdsfgdsfgdsfgsdfgdsfg
+// `,
+//         /\#\{[column]\}\n*{\t{content}\n\t[===]\n}\t{content}\n/
+//     ),
+// ];
+// console.log(f);
 
 // pattern have \t+>(tabs){content}\n(tabs)>[=+]
