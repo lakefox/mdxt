@@ -48,94 +48,18 @@ function* find(string, pattern) {
         throw new Error("Pattern Can Not Start with a Variable");
     }
     let done = false;
-    let index = 0;
-    let lock = 0;
-    let locked = false;
-    let unlock = 0;
+    let index = Infinity;
     while (!done) {
-        let start = null;
-        let end = null;
-        for (let i = 0; i < broke.length; i++) {
-            if (broke[i].text) {
-                if (start == null) {
-                    start = string.indexOf(broke[i].text, index);
-                    end = start;
-                }
-                if (start == -1) {
-                    done = true;
-                    break;
-                } else {
-                    let g = string.indexOf(broke[i].text, end);
-                    if (g > end) {
-                        if (broke[i + 1]) {
-                            let j = false;
-                            for (let a = i + 1; a < broke.length; a++) {
-                                if (broke[a].text) {
-                                    if (!broke[a].optional) {
-                                        j = a;
-                                        break;
-                                    }
-                                }
-                            }
-                            if (j) {
-                                let h = string.indexOf(broke[j].text, end);
-                                if (g > h && broke[i].optional) {
-                                    i = j - 1;
-                                    continue;
-                                } else {
-                                }
-                            }
-                        }
-                        end = g;
-                    } else if (g != -1) {
-                        locked = false;
-                        i = unlock;
-                    } else if (!broke[i].optional) {
-                        break;
-                    }
-                    if (broke[i].repeatable && !locked) {
-                        locked = true;
-                        lock = i;
-                    } else if (locked) {
-                        let last = end;
-                        let hasBeenSet = false;
-                        for (let a = i; a < broke.length; a++) {
-                            if (broke[a].text) {
-                                let found = string.indexOf(broke[a].text, last);
-                                if (broke[a].repeatable) {
-                                    last = found + broke[a].text.length;
-                                    hasBeenSet = true;
-                                } else {
-                                    unlock = a;
-                                    if (hasBeenSet) {
-                                        if (last >= found) {
-                                            locked = false;
-                                        } else {
-                                            end = last;
-                                        }
-                                    }
-                                    break;
-                                }
-                            }
-                        }
-                        if (locked && !broke[i].repeatable) {
-                            i = lock;
-                        }
-                    }
-                }
-            }
+        let start = string.slice(0, index).lastIndexOf(broke[0].text);
+        let part = string.slice(start, index);
+        let output = map(part, pattern);
+
+        if (output.start != -1) {
+            index = start;
+            yield output;
+        } else {
+            done = true;
         }
-        if (broke[broke.length - 1].text) {
-            end += broke[broke.length - 1].text.length;
-        }
-        index = end;
-        let raw = string.slice(start, end);
-        yield {
-            raw,
-            index: start,
-            length: end - start,
-            state: map(raw, pattern),
-        };
     }
 }
 
@@ -143,7 +67,6 @@ function map(string, pattern) {
     let broke = breakPattern(
         pattern.toString().slice(1, -1).replace("\\\\", "\\")
     );
-    console.log(broke);
     if (broke[0].text == undefined) {
         throw new Error("Pattern Can Not Start with a Variable");
     }
@@ -153,13 +76,7 @@ function map(string, pattern) {
     let repeatable = false;
     let secondPass = false;
     for (let a = 1; a < broke.length; a++) {
-        console.log("start");
-        console.log(broke[a], index);
-        console.log("#-----------------");
-        console.log(string.slice(index));
-        console.log("!-----------------");
         if (broke[a].text) {
-            //combine all repeatables after the varible declearation into a single string and look for it then add the length and skip to the a value at/or if at skip to start until not found
             let slug = "";
             let end = a;
             for (let b = a; b < broke.length; b++) {
@@ -175,7 +92,6 @@ function map(string, pattern) {
                 }
             }
             if (broke[a].optional) {
-                console.log("optional");
                 let pos = string.indexOf(broke[a].text, index);
                 let skip = false;
                 if (pos != -1) {
@@ -192,17 +108,13 @@ function map(string, pattern) {
                 }
 
                 if (skip) {
-                    console.log("skipping");
                     continue;
                 }
             }
-            console.log(slug.split(""));
 
             let slugPos = string.indexOf(slug, index);
-            console.log("Slug Position: ", slugPos);
 
             if (slugPos == -1 && broke[a].repeatable) {
-                console.log("Stopping Loop");
                 for (let b = a; b < broke.length; b++) {
                     if (broke[b].text && !broke[b].repeatable) {
                         a = b;
@@ -213,9 +125,7 @@ function map(string, pattern) {
             }
 
             if (name) {
-                console.log("OP", name, end);
                 let contents = string.slice(index, slugPos);
-                console.log(repeatable);
                 if (repeatable || typeof store[name] == "object") {
                     if (!store[name]) {
                         store[name] = [];
@@ -225,17 +135,14 @@ function map(string, pattern) {
                     store[name] = contents;
                 }
                 secondPass = false;
-                console.table(store);
                 name = "";
             } else {
-                console.log("Jump", end - 1);
                 a = end - 1;
             }
 
             if (slugPos != -1) {
                 index = slugPos + slug.length;
             }
-            console.log(broke[end], broke[a]);
             if (broke[a].repeatable && !secondPass && slugPos != -1) {
                 let reset = false;
                 if (broke[end + 1]) {
@@ -245,7 +152,6 @@ function map(string, pattern) {
                 } else {
                     reset = true;
                 }
-                console.log("reset", reset);
                 if (reset) {
                     for (let b = a; b > 0; b--) {
                         if (!broke[b].repeatable) {
@@ -263,7 +169,16 @@ function map(string, pattern) {
             }
         }
     }
-    return store;
+    let start = string.indexOf(broke[0].text);
+    let end = index;
+    let raw = string.slice(start, end);
+    return {
+        start,
+        end,
+        raw,
+        length: end - start,
+        state: store,
+    };
 }
 
 function breakPattern(pattern, allOptional = false, allRepeatable = false) {
@@ -391,17 +306,24 @@ function escapeBuffer(b) {
         .join("");
 }
 
-// let f = map(
-//     `@[id:select]{0}
+// let f = [
+//     ...find(
+//         `dfs@[id]{0} test
+// tejsahjkdhjksdfhkajsldhfjkshdjk
+// @[id:select]{0}
 // \t[L1](0)
 // \t[L2](1)
 // \t[L3](2)
+// dshfjksdahfkjhdsjakhfjkasdhfkjshalkjfhjkas
 // `,
-//     /\@\[{id}?{\:{type}}\]\{{default}\}?{\({parameters}\){text}}\n?{*{\t\[{label}\]\({value}\)\n}}/
-// );
+//         /\@\[{id}?{\:{type}}\]\{{default}\}?{\({parameters}\){text}}\n?{*{\t\[{label}\]\({value}\)\n}}/
+//     ),
+// ];
 
-let f = map(
-    `#{column}
+let f = [
+    ...find(
+        `jkfgdsfjkhlgjhkldfshjkgjhkdsjhkgjhkdsjkfgjkhdsfjhkgkjldsfhgljkdsf
+#{column}
 \tconetn1
 \ttest
 \t===
@@ -409,10 +331,11 @@ let f = map(
 \tmore
 \t===
 \ttext
-word hello
+word hellodfgdsfgdfsgdsfgdsfgdsfgsdfgdsfg
 `,
-    /\#\{[column]\}\n*{\t{content}\n\t[===]\n}\t{content}\n/
-);
+        /\#\{[column]\}\n*{\t{content}\n\t[===]\n}\t{content}\n/
+    ),
+];
 console.log(f);
 
 // pattern have \t+>(tabs){content}\n(tabs)>[=+]

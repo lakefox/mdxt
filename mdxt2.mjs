@@ -4,7 +4,7 @@ let parser = new FastExtract();
 
 parser.define(
     "input",
-    /\@\[{id}?{\:{type}}\]\{{default}\}?{\({parameters}\){text}}\n?{*{\t\[{label}\]\({value}\)?{\n}}}/
+    /\@\[{id}?{\:{type}}\]\{{default}\}?{\({parameters}\){text}}\n?{*{\t\[{label}\]\({value}\)\n}}/
 );
 
 parser.define(
