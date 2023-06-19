@@ -16,7 +16,6 @@ export function FastExtract() {
                 extracted[key] = [...find(text, pattern)].reverse();
             }
         }
-        console.log(extracted);
         for (const key in definitions) {
             if (Object.hasOwnProperty.call(definitions, key)) {
                 const pattern = definitions[key];
@@ -54,7 +53,6 @@ function* find(string, pattern) {
         let start = string.slice(0, index).lastIndexOf(broke[0].text);
         let part = string.slice(start, index);
         let output = map(part, pattern);
-
         if (output.start != -1) {
             index = start;
             output.start += start;
@@ -70,7 +68,6 @@ function map(string, pattern) {
     let broke = breakPattern(
         pattern.toString().slice(1, -1).replace("\\\\", "\\")
     );
-    console.log(broke);
     if (broke[0].text == undefined) {
         throw new Error("Pattern Can Not Start with a Variable");
     }
@@ -135,8 +132,17 @@ function map(string, pattern) {
                         if (pos != index) {
                             skip = true;
                         }
+                    } else if (broke[a - 1].name) {
+                        if (broke[a - 2]) {
+                            if (broke[a - 2].text) {
+                                if (!broke[a - 2].exists) {
+                                    skip = true;
+                                }
+                            }
+                        }
                     }
                 }
+
                 broke[a].exists = !skip;
                 if (skip) {
                     continue;
@@ -342,44 +348,3 @@ function escapeBuffer(b) {
         .map((e, i) => (e == "" ? (escapeMap[b[i]] ? escapeMap[b[i]] : "") : e))
         .join("");
 }
-
-// let f = [
-//     ...find(
-//         `dfs@[id]{0} test
-// tejsahjkdhjksdfhkajsldhfjkshdjk
-// @[id:select]{0}
-// \t[L1](0)
-// \t[L2](1)
-// \t[L3](2)
-// dshfjksdahfkjhdsjakhfjkasdhfkjshalkjfhjkas
-// `,
-//         /\@\[{id}?{\:{type}}\]\{{default}\}?{\({parameters}\){text}}\n?{*{\t\[{label}\]\({value}\)\n}}/
-//     ),
-// ];
-
-// let f = [
-//     ...find(
-//         `jkfgdsfjkhlgjhkldfshjkgjhkdsjhkgjhkdsjkfgjkhdsfjhkgkjldsfhgljkdsf
-// #{column}
-// \tconetn1
-// \ttest
-// \t===
-// \thi
-// \tmore
-// \t===
-// \ttext
-// word hellodfgdsfgdfsgdsfgdsfgdsfgsdfgdsfg
-// `,
-//         /\#\{[column]\}\n*{\t{content}\n\t[===]\n}\t{content}\n/
-//     ),
-// ];
-// console.log(f);
-
-// pattern have \t+>(tabs){content}\n(tabs)>[=+]
-
-console.log(
-    map(
-        `@{a}[0]\n</article>\n\n%[index, length]{10}\n\t@{index} of @{length}\n`,
-        /\@\{{id}\}?{\[{index}\]}/
-    )
-);

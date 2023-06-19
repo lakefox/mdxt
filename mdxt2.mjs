@@ -157,7 +157,6 @@ parser.on("spreadsheet", ({ state }, context) => {
 
 // WARN!: Not done
 parser.on("exe", ({ state }, context) => {
-    console.log(state);
     let e = exe(state.exp, context);
     return `<span data-mdxt-exe="${encodeURIComponent(e.statement)}">${
         e.result
@@ -181,7 +180,6 @@ parser.on("for", ({ state }, context) => {
     let html = "";
     let vars = state.vars.split(", ");
     let int = state.repeatable.join("\n") + "\n";
-    console.log(state);
     let e = exe(state.amount, context);
     let amt = e.result;
     for (let i = 0; i < amt; i++) {
