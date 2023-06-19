@@ -1,4 +1,5 @@
 export function exe(statement, context) {
+    console.log(statement);
     let cmd = statement.replace(/<[^>]*>(.*?)<[^>]*>/g, (tag, value) => {
         return type(value);
     });

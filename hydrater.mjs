@@ -1,4 +1,7 @@
-function hydrater(keys, contains) {
+import { exe } from "./utils.mjs";
+
+export function hydrater(state, inheritedContains) {
+    let { keys, contains } = genState(state, inheritedContains);
     if (Object.keys(keys).length > 0) {
         return `
     (()=>{
@@ -91,6 +94,40 @@ function hydrater(keys, contains) {
     } else {
         return "";
     }
+}
+
+function genState(state, contains) {
+    let inputs = state.input.concat(state.exeId).map((e) => e.state);
+    let newState = {};
+    for (let i = 0; i < inputs.length; i++) {
+        let name = inputs[i].id;
+        if (name[0] == "#") {
+            name = name.slice(1);
+            if (newState[name]) {
+                newState[name].group.push({ value: inputs[i].default });
+            } else {
+                newState[name] = {
+                    type: inputs[i].type || "text",
+                    group: [{ value: inputs[i].default }],
+                };
+            }
+        } else if (inputs[i].exp) {
+            newState[name] = {
+                value: exe(inputs[i].exp, state).result,
+                cmd: inputs[i].exp,
+                type: "exe",
+                group: false,
+            };
+        } else {
+            newState[name] = {
+                value: inputs[i].default,
+                type: inputs[i].type || "text",
+                group: false,
+            };
+        }
+    }
+    contains.spreadsheet = state.spreadsheet.length > 0;
+    return { keys: newState, contains };
 }
 
 function injectScript(contains) {

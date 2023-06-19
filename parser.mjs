@@ -16,6 +16,7 @@ export function FastExtract() {
                 extracted[key] = [...find(text, pattern)].reverse();
             }
         }
+        console.log(extracted);
         for (const key in definitions) {
             if (Object.hasOwnProperty.call(definitions, key)) {
                 const pattern = definitions[key];
@@ -28,7 +29,6 @@ export function FastExtract() {
                             text.slice(0, found[i].start) +
                             replaceValue +
                             text.slice(found[i].end);
-                        // console.log(text);
                     }
                 }
             }
@@ -70,6 +70,7 @@ function map(string, pattern) {
     let broke = breakPattern(
         pattern.toString().slice(1, -1).replace("\\\\", "\\")
     );
+    console.log(broke);
     if (broke[0].text == undefined) {
         throw new Error("Pattern Can Not Start with a Variable");
     }
@@ -128,6 +129,13 @@ function map(string, pattern) {
                     }
                 } else {
                     skip = true;
+                }
+                if (broke[a - 1]) {
+                    if (broke[a - 1].text) {
+                        if (pos != index) {
+                            skip = true;
+                        }
+                    }
                 }
                 broke[a].exists = !skip;
                 if (skip) {
@@ -368,3 +376,10 @@ function escapeBuffer(b) {
 // console.log(f);
 
 // pattern have \t+>(tabs){content}\n(tabs)>[=+]
+
+console.log(
+    map(
+        `@{a}[0]\n</article>\n\n%[index, length]{10}\n\t@{index} of @{length}\n`,
+        /\@\{{id}\}?{\[{index}\]}/
+    )
+);

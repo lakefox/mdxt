@@ -2,6 +2,7 @@ import { FastExtract } from "./parser.mjs";
 import { exe } from "./utils.mjs";
 import { marked } from "marked";
 import { highlight } from "./hlCode.mjs";
+import { hydrater } from "./hydrater.mjs";
 
 let parser = new FastExtract();
 
@@ -97,7 +98,11 @@ parser.on("var", ({ state }, context) => {
         return `<span data-mdxt-value="${state.id}"${index}>${value}</span>`;
     } else {
         let e = exe(`@{${state.id}}`, context);
-        return `<span data-mdxt-value="${state.id}">${e.result}</span>`;
+        if (e.result) {
+            return `<span data-mdxt-value="${state.id}">${e.result}</span>`;
+        } else {
+            return `@{${state.id}}`;
+        }
     }
 });
 
@@ -152,6 +157,7 @@ parser.on("spreadsheet", ({ state }, context) => {
 
 // WARN!: Not done
 parser.on("exe", ({ state }, context) => {
+    console.log(state);
     let e = exe(state.exp, context);
     return `<span data-mdxt-exe="${encodeURIComponent(e.statement)}">${
         e.result
@@ -159,9 +165,7 @@ parser.on("exe", ({ state }, context) => {
 });
 
 parser.on("exeId", ({ state }, context) => {
-    console.log("here", state);
     let e = exe(state.exp, context);
-    console.log(e);
     return `<span data-mdxt-parent="${
         state.id
     }" style="display: none;" data-mdxt-exe="${encodeURIComponent(
@@ -177,6 +181,7 @@ parser.on("for", ({ state }, context) => {
     let html = "";
     let vars = state.vars.split(", ");
     let int = state.repeatable.join("\n") + "\n";
+    console.log(state);
     let e = exe(state.amount, context);
     let amt = e.result;
     for (let i = 0; i < amt; i++) {
@@ -200,11 +205,15 @@ parser.on("if", ({ state }, context) => {
 });
 
 export function render(md) {
+    let contains = {
+        spreadsheet: false,
+        highlighted: false,
+    };
     let doc = parser.extract(md);
     let highlighted = highlight(doc.value);
     contains.highlighted = highlighted.hydrater;
     return {
         content: marked.parse(highlighted.html),
-        hydrater: hydrater(doc.state),
+        hydrater: hydrater(doc.state, contains),
     };
 }
