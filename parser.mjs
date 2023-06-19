@@ -16,7 +16,6 @@ export function FastExtract() {
                 extracted[key] = [...find(text, pattern)].reverse();
             }
         }
-        console.log(extracted);
         for (const key in definitions) {
             if (Object.hasOwnProperty.call(definitions, key)) {
                 const pattern = definitions[key];
@@ -29,6 +28,7 @@ export function FastExtract() {
                             text.slice(0, found[i].start) +
                             replaceValue +
                             text.slice(found[i].end);
+                        // console.log(text);
                     }
                 }
             }
@@ -73,12 +73,32 @@ function map(string, pattern) {
     if (broke[0].text == undefined) {
         throw new Error("Pattern Can Not Start with a Variable");
     }
-    let index = string.indexOf(broke[0].text) + broke[0].text.length;
+    let initPattern = "";
+    let startIndex = 0;
+    for (let i = 0; i < broke.length; i++) {
+        if (broke[i].text) {
+            initPattern += broke[i].text;
+            startIndex = i;
+        } else {
+            break;
+        }
+    }
+    if (string.indexOf(initPattern) == -1) {
+        return {
+            start: -1,
+            end: 0,
+            raw: "",
+            length: 0,
+            state: {},
+        };
+    }
+
+    let index = string.indexOf(initPattern) + initPattern.length;
     let store = {};
     let name = "";
     let repeatable = false;
     let secondPass = false;
-    for (let a = 1; a < broke.length; a++) {
+    for (let a = startIndex + 1; a < broke.length; a++) {
         if (broke[a].text) {
             let slug = "";
             let end = a;
@@ -109,7 +129,7 @@ function map(string, pattern) {
                 } else {
                     skip = true;
                 }
-
+                broke[a].exists = !skip;
                 if (skip) {
                     continue;
                 }
@@ -126,7 +146,6 @@ function map(string, pattern) {
                 }
                 continue;
             }
-
             if (name) {
                 let contents = string.slice(index, slugPos);
                 if (repeatable || typeof store[name] == "object") {
@@ -166,9 +185,16 @@ function map(string, pattern) {
                 }
             }
         } else {
-            if (broke[a].name) {
+            if (broke[a].name && !broke[a].optional) {
                 name = broke[a].name;
                 repeatable = broke[a].repeatable;
+            } else if (broke[a].optional) {
+                if (broke[a - 1]) {
+                    if (broke[a - 1].exists) {
+                        name = broke[a].name;
+                        repeatable = broke[a].repeatable;
+                    }
+                }
             }
         }
     }
