@@ -68,6 +68,7 @@ function map(string, pattern) {
     let broke = breakPattern(
         pattern.toString().slice(1, -1).replace("\\\\", "\\")
     );
+
     if (broke[0].text == undefined) {
         throw new Error("Pattern Can Not Start with a Variable");
     }
@@ -135,7 +136,10 @@ function map(string, pattern) {
                     } else if (broke[a - 1].name) {
                         if (broke[a - 2]) {
                             if (broke[a - 2].text) {
-                                if (!broke[a - 2].exists) {
+                                if (
+                                    !broke[a - 2].exists &&
+                                    typeof broke[a - 2].exists != "undefined"
+                                ) {
                                     skip = true;
                                 }
                             }

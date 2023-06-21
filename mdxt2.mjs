@@ -8,17 +8,17 @@ let parser = new FastExtract();
 
 parser.define(
     "input",
-    /\@\[{id}?{\:{type}}\]\{{default}\}?{\({parameters}\){text}}\n?{*{\t\[{label}\]\({value}\)\n}}/
+    /\@\[{id}?{\:{type}}\]\{{default}\}?{\({parameters}\){text}}\n?{*{\t\[{label}\]\({value}\)\n}\n}/
 );
 
 parser.define(
     "column",
-    /\#\{[column]\}\n*{\t{content}\n\t[===]\n}\t{content}\n/
+    /\#\{[column]\}\n*{\t{content}\n\t[===]\n}\t{content}\n\n/
 );
 
 parser.define(
     "accordion",
-    /\#\{[accordion]\}\n*{\t\[{label}\]\n\t{content}\n}/
+    /\#\{[accordion]\}\n*{\t\[{label}\]\n\t{content}\n}\n/
 );
 
 parser.define("spreadsheet", /\#\{[spreadsheet]\}\n*{\t{row}\n}/);
@@ -32,9 +32,9 @@ parser.define("note", /\!\{{note}\}/);
 parser.define("exe", /\>\{{exp}\}\;/);
 parser.define("exeId", /\>\[{id}\]\{{exp}\}\;/);
 
-parser.define("for", /\%\[{vars}\]\{{amount}\}\n*{\t{repeatable}\n}/);
+parser.define("for", /\%\[{vars}\]\{{amount}\}\n\t{repeatable}\n\n/);
 
-parser.define("if", /\?\{{condition}\}\n*{\t{repeatable}\n}/);
+parser.define("if", /\?\{{condition}\}\n\t{repeatable}\n\n/);
 
 parser.on("input", ({ state }) => {
     let isGroup = state.id[0] == "#";
@@ -98,7 +98,7 @@ parser.on("var", ({ state }, context) => {
         return `<span data-mdxt-value="${state.id}"${index}>${value}</span>`;
     } else {
         let e = exe(`@{${state.id}}`, context);
-        if (e.result) {
+        if (typeof e.result != "undefined") {
             return `<span data-mdxt-value="${state.id}">${e.result}</span>`;
         } else {
             return `@{${state.id}}`;
@@ -169,7 +169,7 @@ parser.on("exeId", ({ state }, context) => {
         state.id
     }" style="display: none;" data-mdxt-exe="${encodeURIComponent(
         e.statement
-    )}}">${e.result}</span>`;
+    )}">${e.result}</span>`;
 });
 
 parser.on("note", ({ state }) => {
@@ -179,7 +179,7 @@ parser.on("note", ({ state }) => {
 parser.on("for", ({ state }, context) => {
     let html = "";
     let vars = state.vars.split(", ");
-    let int = state.repeatable.join("\n") + "\n";
+    let int = state.repeatable;
     let e = exe(state.amount, context);
     let amt = e.result;
     for (let i = 0; i < amt; i++) {
