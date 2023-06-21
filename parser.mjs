@@ -23,7 +23,11 @@ export function FastExtract() {
                     let found = [...find(text, pattern)].reverse();
                     found.sort((a, b) => b.start - a.start);
                     for (let i = 0; i < found.length; i++) {
-                        let replaceValue = handlers[key](found[i], extracted);
+                        let replaceValue = handlers[key](
+                            found[i],
+                            extracted,
+                            found.length - i - 1
+                        );
                         text =
                             text.slice(0, found[i].start) +
                             replaceValue +

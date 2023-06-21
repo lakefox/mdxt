@@ -8,7 +8,7 @@ let parser = new FastExtract();
 
 parser.define(
     "input",
-    /\@\[{id}?{\:{type}}\]\{{default}\}?{\({parameters}\){text}}\n?{*{\t\[{label}\]\({value}\)\n}\n}/
+    /\@\[{id}?{\:{type}}\]\{{default}\}?{\({parameters}\){text}}\n?{*{\t\[{label}\]\({value}\)\n}}/
 );
 
 parser.define(
@@ -36,14 +36,14 @@ parser.define("for", /\%\[{vars}\]\{{amount}\}\n\t{repeatable}\n\n/);
 
 parser.define("if", /\?\{{condition}\}\n\t{repeatable}\n\n/);
 
-parser.on("input", ({ state }) => {
+parser.on("input", ({ state }, context, index) => {
     let isGroup = state.id[0] == "#";
     let name = (isGroup ? state.id.slice(1) : state.id) || "";
     let value = ` value="${state.default || ""}"`;
-    let title = ` title="${state.default || ""}"`;
+    let title = ` title="${name || ""}"`;
     let namep = ` name="${name}"`;
     let parent = ` data-mdxt-parent="${name}"`;
-    let group = ` ${isGroup ? "data-mdxt-index='" + name + "'" : ""}`;
+    let group = ` ${isGroup ? "data-mdxt-index='" + index + "'" : ""}`;
     let parameters = state.parameters || "";
     let html = "";
     if (state.type == "select") {

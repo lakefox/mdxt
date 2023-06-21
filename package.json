@@ -1,15 +1,16 @@
 {
-  "name": "mdxt",
-  "version": "1.0.11",
-  "description": "",
-  "main": "mdxt.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "lakefox",
-  "license": "MIT",
-  "dependencies": {
-    "highlight.js": "^11.7.0",
-    "marked": "^4.2.12"
-  }
+    "name": "mdxt",
+    "version": "1.0.11",
+    "description": "",
+    "main": "mdxt.mjs",
+    "type": "module",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "lakefox",
+    "license": "MIT",
+    "dependencies": {
+        "highlight.js": "^11.7.0",
+        "marked": "^4.2.12"
+    }
 }
