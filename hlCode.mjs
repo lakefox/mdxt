@@ -136,7 +136,7 @@ function prep(raw, tags) {
     if (lang[0] == ">" && ["javascript", "js"].indexOf(lang.slice(1)) != -1) {
         lang = lang.slice(1);
         execute = true;
-    } else if (lang[0] == ">") {
+    } else if (lang[0] == ">" && lang[1] == "\n") {
         let code = part.slice(part.indexOf("\n") + 1);
         let doc = parseDoc(code, [...code.matchAll(/\[(.*?)\]\n/g)]);
         let ret = `<div editor>
