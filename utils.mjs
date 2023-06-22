@@ -13,12 +13,16 @@ export function exe(statement, context) {
         return tag;
     });
     if (cmd.indexOf("@{") != -1) {
-        cmd = resolveFromContext(statement, context);
+        try {
+            cmd = resolveFromContext(statement, context);
+        } catch {
+            return { result: cmd, statement };
+        }
     }
     try {
         return { result: eval(cmd), statement };
     } catch (e) {
-        console.error(e);
+        return { result: cmd, statement };
     }
 }
 
@@ -70,6 +74,7 @@ function resolveFromContext(statement, context) {
                 element.slice(element.indexOf("{") + 1, element.indexOf("};"))
             );
         }
+        console.log(values);
         let r = values[v.slice(2, -1)];
         if (typeof r == "object") {
             return `[${r.toString()}]`;
