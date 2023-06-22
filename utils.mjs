@@ -74,7 +74,6 @@ function resolveFromContext(statement, context) {
                 element.slice(element.indexOf("{") + 1, element.indexOf("};"))
             );
         }
-        console.log(values);
         let r = values[v.slice(2, -1)];
         if (typeof r == "object") {
             return `[${r.toString()}]`;
