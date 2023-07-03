@@ -131,9 +131,12 @@ function runCode(code) {
 
 function prep(raw, tags) {
     let part = raw.trim();
-    let lang = part.slice(0, part.indexOf("\n")).toLowerCase();
+    let lang = part.slice(0, part.indexOf("\n") + 1).toLowerCase();
     let execute = false;
-    if (lang[0] == ">" && ["javascript", "js"].indexOf(lang.slice(1)) != -1) {
+    if (
+        lang[0] == ">" &&
+        ["javascript", "js"].indexOf(lang.slice(1, -1)) != -1
+    ) {
         lang = lang.slice(1);
         execute = true;
     } else if (lang[0] == ">" && lang[1] == "\n") {
